@@ -230,8 +230,15 @@ void test_h264_parser()
     h264_parser("abc.h264");
 }
 
-int main(void)
+int main(int argc, char *argv[])
 {
-    test_h264_parser();
+    if (argc < 2) {
+        printf("Usage: %s <h264 file>", argv[0]);
+        return -1;
+    }
+    int i;
+    for (i = 1; i < argc; i++) {
+        h264_parser(argv[i]);
+    }
     return 0;
 }
