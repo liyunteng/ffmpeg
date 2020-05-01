@@ -113,7 +113,7 @@ int pcm16le_to_pcm8(char *url)
     return 0;
 }
 
-int pcm16le_to_wave(const char *pcmpath, int channels, int sample_rate, consta char *wavepath)
+int pcm16le_to_wave(const char *pcmpath, int channels, int sample_rate, const char *wavepath)
 {
 #pragma pack(1)
     typedef struct {

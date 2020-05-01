@@ -233,7 +233,7 @@ void test_h264_parser()
 int main(int argc, char *argv[])
 {
     if (argc < 2) {
-        printf("Usage: %s <h264 file>", argv[0]);
+        printf("Usage: %s <h264 file>\n", argv[0]);
         return -1;
     }
     int i;
