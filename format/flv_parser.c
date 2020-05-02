@@ -51,7 +51,7 @@ uint reverse_bytes(byte *p, char c)
 
 int flv_parser(char *url) {
     int output_a = 0;
-    int output_v = 1;
+    int output_v = 0;
 
     FILE *ifh = NULL, *vfh = NULL, *afh = NULL;
 
@@ -273,8 +273,15 @@ int flv_parser(char *url) {
     return 0;
 }
 
-int main(void)
+int main(int argc, char *argv[])
 {
-    flv_parser("/home/lyt/Videos/abc.flv");
+    if (argc < 2) {
+        printf("Usage: %s <flv file>\n", argv[0]);
+        return -1;
+    }
+    int i;
+    for (i = 1; i < argc; i++) {
+        flv_parser(argv[i]);
+    }
     return 0;
 }
