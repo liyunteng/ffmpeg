@@ -467,7 +467,6 @@ static int init_output_frame(AVFrame **frame,
 
 static int encode_write_frame(AVFrame *filt_frame, unsigned int stream_index) {
     int ret;
-    int got_frame_local;
     AVPacket enc_pkt;
 
     /* encode filtered frame */
@@ -523,7 +522,7 @@ static int encode_write_frame(AVFrame *filt_frame, unsigned int stream_index) {
 static int encode_write_frame_fifo(AVFrame *filt_frame, unsigned int stream_index) {
     int ret = 0;
     if (stream_ctx[stream_index].enc_ctx->codec_type == AVMEDIA_TYPE_AUDIO) {
-        const int output_frame_size = stream_ctx[stream_index].enc_ctx->frame_size;
+        /* const int output_frame_size = stream_ctx[stream_index].enc_ctx->frame_size; */
 
         /* Make sure that there is one frame worth of samples in the FIFO
          * buffer so that the encoder can do its work.
@@ -638,7 +637,6 @@ int main(int argc, char **argv)
     enum AVMediaType type;
     unsigned int stream_index;
     unsigned int i;
-    int got_frame;
 
     if (argc != 3) {
         av_log(NULL, AV_LOG_ERROR, "Usage: %s <input file> <output file>\n", argv[0]);
