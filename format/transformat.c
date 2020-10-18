@@ -35,6 +35,9 @@ int transformat(const char *in, const char *out)
         goto failed;
     }
 
+    av_log(NULL, AV_LOG_INFO, "in flags: 0x%x  out flags: 0x%x\n", ifmt_ctx->iformat->flags,
+           ofmt_ctx->oformat->flags);
+    /* ofmt_ctx->oformat->flags |= AVFMT_GLOBALHEADER; */
     ofmt = ofmt_ctx->oformat;
     for (i = 0; i < ifmt_ctx->nb_streams; i++) {
         AVStream *out_stream;
@@ -45,11 +48,17 @@ int transformat(const char *in, const char *out)
             av_log(NULL, AV_LOG_ERROR, "avforamt_new_stream failed\n");
             goto failed;
         }
+
         if (avcodec_parameters_copy(out_stream->codecpar, in_stream->codecpar) < 0) {
             av_log(NULL, AV_LOG_ERROR, "avcodec_parameters_copy failed\n");
             goto failed;
         }
+
         out_stream->codecpar->codec_tag = 0;
+        if (ofmt->flags & AVFMT_GLOBALHEADER) {
+            /* out_stream->codec->flags |= AV_CODEC_FLAG_GLOBAL_HEADER; */
+            /* av_log(ofmt_ctx, AV_LOG_INFO, "#### AV_CODEC_FLAG_GLOBAL_HEADER\n"); */
+        }
     }
     /* av_dump_format(ofmt_ctx, 0, out, 1); */
 
@@ -128,5 +137,5 @@ int main(int argc, char *argv[])
 }
 
 /* Local Variables: */
-/* compile-command: "clang -Wall -o abc abc.c -g -lavformat -lavcodec -lavutil" */
+/* compile-command: "clang -Wall -o transformat transformat.c -g -lavformat -lavcodec -lavutil" */
 /* End: */
