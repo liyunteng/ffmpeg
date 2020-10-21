@@ -29,8 +29,8 @@ open_input(const char *in, transcode_ctx *ctx)
 
     ctx->ifmt_ctx = NULL;
     if ((ret = avformat_open_input(&ctx->ifmt_ctx, in, NULL, NULL)) < 0) {
-        av_log(NULL, AV_LOG_ERROR, "avformat_open_input %s failed: %s\n",
-               in, av_err2str(ret));
+        av_log(NULL, AV_LOG_ERROR, "avformat_open_input %s failed: %s\n", in,
+               av_err2str(ret));
         return ret;
     }
 
@@ -41,7 +41,7 @@ open_input(const char *in, transcode_ctx *ctx)
     }
 
     ctx->stream_cctxs =
-        av_mallocz_array(ctx->ifmt_ctx->nb_streams, sizeof(stream_cctx *));
+        av_mallocz_array(ctx->ifmt_ctx->nb_streams, sizeof(stream_cctx));
     if (!ctx->stream_cctxs) {
         return AVERROR(ENOMEM);
     }
@@ -63,7 +63,8 @@ open_input(const char *in, transcode_ctx *ctx)
 
         ret = avcodec_parameters_to_context(cctx, stream->codecpar);
         if (ret < 0) {
-            av_log(NULL, AV_LOG_ERROR, "avcodec_parameters_to_context failed: %s\n",
+            av_log(NULL, AV_LOG_ERROR,
+                   "avcodec_parameters_to_context failed: %s\n",
                    av_err2str(ret));
             return ret;
         }
@@ -71,7 +72,8 @@ open_input(const char *in, transcode_ctx *ctx)
         if (cctx->codec_type == AVMEDIA_TYPE_VIDEO
             || cctx->codec_type == AVMEDIA_TYPE_AUDIO) {
             if (cctx->codec_type == AVMEDIA_TYPE_VIDEO) {
-                cctx->framerate = av_guess_frame_rate(ctx->ifmt_ctx, stream, NULL);
+                cctx->framerate =
+                    av_guess_frame_rate(ctx->ifmt_ctx, stream, NULL);
             }
 
             ret = avcodec_open2(cctx, codec, NULL);
@@ -98,8 +100,8 @@ open_output(const char *out, transcode_ctx *ctx)
     ctx->ofmt_ctx = NULL;
     ret = avformat_alloc_output_context2(&ctx->ofmt_ctx, NULL, NULL, out);
     if (!ctx->ofmt_ctx) {
-        av_log(NULL, AV_LOG_ERROR, "avformat_alloc_output_context2 failed: %s\n",
-               av_err2str(ret));
+        av_log(NULL, AV_LOG_ERROR,
+               "avformat_alloc_output_context2 failed: %s\n", av_err2str(ret));
         return AVERROR_UNKNOWN;
     }
 
@@ -190,8 +192,8 @@ open_output(const char *out, transcode_ctx *ctx)
             ret = avcodec_parameters_copy(out_stream->codecpar,
                                           in_stream->codecpar);
             if (ret < 0) {
-                av_log(NULL, AV_LOG_ERROR, "avcodec_parameters_copy failed: %s\n",
-                       av_err2str(ret));
+                av_log(NULL, AV_LOG_ERROR,
+                       "avcodec_parameters_copy failed: %s\n", av_err2str(ret));
                 return ret;
             }
             out_stream->time_base = in_stream->time_base;
@@ -272,7 +274,7 @@ encode_frame(AVFrame *frame, int stream_index, transcode_ctx *ctx)
 }
 
 static int
-decode_packet(AVPacket *packet, int stream_index,transcode_ctx *ctx)
+decode_packet(AVPacket *packet, int stream_index, transcode_ctx *ctx)
 {
     AVFrame *frame = NULL;
     int ret;
@@ -291,7 +293,8 @@ decode_packet(AVPacket *packet, int stream_index,transcode_ctx *ctx)
     }
 
     while (ret >= 0) {
-        ret = avcodec_receive_frame(ctx->stream_cctxs[stream_index].ic_ctx, frame);
+        ret = avcodec_receive_frame(ctx->stream_cctxs[stream_index].ic_ctx,
+                                    frame);
         if (ret == AVERROR(EAGAIN) || ret == AVERROR_EOF) {
             break;
         } else if (ret < 0) {
