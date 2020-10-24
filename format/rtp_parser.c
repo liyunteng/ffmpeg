@@ -3,17 +3,17 @@
  *
  * Date   : 2020/05/03
  */
-#include <stdio.h>
 
+/* test cmd: ffmpeg -re -i a.ts -an -f rtp rtp://127.0.0.1:12345 -i a.ts -vn -f rtp rtp://127.0.0.1:1234 */
+/* test cmd: ffmpeg -i a.ts -an -f rtp rtp://127.0.0.1:12345 -i a.ts -vn -f rtp rtp://127.0.0.1:1234 */
+
+#include <arpa/inet.h>
 #include <stdint.h>
-
-#define IPMAXLEN 20
-#define UDP_MAX_SIZE 1500
-#define RTP_FIXED_HEADER_SIZE 12
-#define RTP_DEFAULT_JITTER_TIME 80       /* miliseconds */
-#define RTP_DEFAULT_MULTICAST_TTL 5      /* hops */
-#define RTP_DEFAULT_MULTICAST_LOOPBACK 0 /* false */
-#define RTP_DEFAULT_DSCP 0x00            /* best effort */
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+#include <sys/socket.h>
+#include <unistd.h>
 
 /*  0                   1                   2                   3
  *  0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1
@@ -28,132 +28,127 @@
  * |                             ....                              |
  * +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
  */
-typedef struct {
-#ifdef __BIGENDIAN__
-    uint8_t version : 2;
-    uint8_t padbid : 1;
-    uint8_t extbit : 1;
-    uint8_t cc : 4;
 
-    uint8_t markbit : 1;
-    uint8_t paytype : 7;
-#else
-    uint8_t cc : 4;
-    uint8_t extbit : 1;
-    uint8_t padbit : 1;
-    uint8_t version : 2;
-    uint8_t paytype : 7;
-    uint8_t markbit : 1;
-#endif  // __BIGENDIAN__
-    uint16_t seq_number;
+typedef struct {
+    uint8_t csrc_len : 4;  /* expect 0 */
+    uint8_t extension : 1; /* expect 1 */
+    uint8_t padding : 1;   /* expect 0 */
+    uint8_t version : 2;   /* expect 2 */
+
+    uint8_t payload : 7;
+    uint8_t marker : 1; /* expect 1 */
+
+    uint16_t seq_no;
+
     uint32_t timestamp;
+
     uint32_t ssrc;
-    uint32_t csrc[15];
-} rtp_header_t;
+} rtp_fix_header;
 
-typedef struct {
-    uint64_t packet_sent;
-    uint64_t sent;            /* bytes sent */
-    uint64_t recv;            /* bytes of payload received and
-                               * delivered in time to the application */
-    uint64_t hw_recv;         /* bytes of payload received */
-    uint64_t packet_recv;     /* number of packets received */
-    uint64_t unavaillable;    /* packets not availlable when they
-                               * where queried */
-    uint64_t outoftime;       /* number of packets that were
-                               * received too late */
-    uint64_t cum_packet_loss; /* cumulative number of packet lost */
-    uint64_t bad;             /* packets that did not apper to be RTP */
-    uint64_t discarded;       /* incoming packets discarded because
-                               * the queue exceeds its max size */
-} rtp_stats_t;
+int
+rtp_parser(int port)
+{
+    int fd;
+    struct sockaddr_in addr;
+    struct sockaddr_in remote;
+    socklen_t remote_len;
+    char buf[4096];
+    int cnt      = 0;
+    int pkt_size = 0;
 
-#define RTP_TIMESTAMP_IS_NEWER_THAN(ts1, ts2)                           \
-    ((uint32_t)((uint32_t)(ts1) - (uint32_t)(ts2)) < (uint32_t)(1 << 31))
-
-#define RTP_TIMESTAMP_IS_STRICTLY_NEWER_THAN(ts1, ts2)                     \
-    (((uint32_t)((uint32_t)(ts1) - (uint32_t)(ts2)) < (uint32_t)(1 << 31)) \
-     && (ts1) != (ts2))
-
-#define TIME_IS_NEWER_THAN(t1, t2) RTP_TIMESTAMP_IS_NEWER_THAN(t1, t2)
-
-#define TIME_IS_STRICTLY_NEWER_THAN(t1, t2)         \
-    RTP_TIMESTAMP_IS_STRICTLY_NEWER_THAN(t1, t2)
-
-  /* packet api */
-  /* the first argument is a mblk_t. The header is supposed to be not splitted  */
-#define rtp_set_markbit(mp, value)                      \
-    ((rtp_header_t *)((mp)->b_rptr))->markbit = (value)
-#define rtp_set_seqnumber(mp, seq)                          \
-    ((rtp_header_t *)((mp)->b_rptr))->seq_number = (seq)
-#define rtp_set_timestamp(mp, ts)                       \
-    ((rtp_header_t *)((mp)->b_rptr))->timestamp = (ts)
-#define rtp_set_ssrc(mp, _ssrc) ((rtp_header_t *)((mp)->b_rptr))->ssrc = (_ssrc)
-#define rtp_set_payload_type(mp, pt)                    \
-    ((rtp_header_t *)((mp)->b_rptr))->paytype = (pt)
-
-#define rtp_get_markbit(mp) (((rtp_header_t *)((mp)->b_rptr))->markbit)
-#define rtp_get_extbit(mp) (((rtp_header_t *)((mp)->b_rptr))->extbit)
-#define rtp_get_timestamp(mp) (((rtp_header_t *)((mp)->b_rptr))->timestamp)
-#define rtp_get_seqnumber(mp) (((rtp_header_t *)((mp)->b_rptr))->seq_number)
-#define rtp_get_payload_type(mp) (((rtp_header_t *)((mp)->b_rptr))->paytype)
-#define rtp_get_ssrc(mp) (((rtp_header_t *)((mp)->b_rptr))->ssrc)
-#define rtp_get_cc(mp) (((rtp_header_t *)((mp)->b_rptr))->cc)
-#define rtp_get_csrc(mp, idx) (((rtp_header_t *)((mp)->b_rptr))->csrc[idx])
-
-
-int rtp_parser(char *url) {
-    FILE *fp = NULL;
-    rtp_header_t *hdr;
-    uint8_t buf[4096 * 1024];
-    int rc;
-    int offset = 0;
-
-
-    fp = fopen(url, "rb");
-    if (fp == NULL) {
-        printf("Failed to open %s\n", url);
+    fd = socket(AF_INET, SOCK_DGRAM, IPPROTO_UDP);
+    if (socket < 0) {
+        printf("socket failed\n");
         return -1;
     }
 
-    while ((rc = fread(buf, 1, sizeof(buf)/sizeof(buf[0]), fp)) > 0) {
-        while (rc > 0) {
-            hdr = (rtp_header_t *)(buf+offset);
-            printf("version: %d\n", hdr->version);
-            printf("P: %d\n", hdr->padbit);
-            printf("X: %d\n", hdr->extbit);
-            printf("CC: %d\n", hdr->cc);
-            printf("M: %d\n", hdr->markbit);
-            printf("PT: %d\n", hdr->paytype);
-            printf("SN: %d\n", hdr->seq_number);
-            printf("TS: %d\n", hdr->timestamp);
-            printf("SSRC: 0x%x\n", hdr->ssrc);
-            for (int i = 0; i < hdr->cc; i++) {
-                printf("CSRC: 0x%x\n", hdr->csrc[i]);
-            }
-            if (hdr->extbit == 0) {
-                offset += (hdr->seq_number + 12);
-            }
-
-            rc -= hdr->seq_number;
-            printf("offset: %d rc: %d\n", offset, rc);
-        }
-
+    memset(&addr, 0, sizeof(struct sockaddr_in));
+    addr.sin_family      = AF_INET;
+    addr.sin_port        = htons(port);
+    addr.sin_addr.s_addr = INADDR_ANY;
+    if (bind(fd, (struct sockaddr *)&addr, sizeof(addr)) < 0) {
+        printf("bind failed\n");
+        return -1;
     }
 
+    printf(" count | payload |  timestamp  | seqnum | pkt_size | ssrc\n");
+
+    while (1) {
+        pkt_size =
+            recvfrom(fd, buf, 4096, 0, (struct sockaddr *)&remote, &remote_len);
+        if (pkt_size > 0) {
+            char payload_str[10];
+            rtp_fix_header *rtp_header = NULL;
+
+            rtp_header = (rtp_fix_header *)buf;
+            switch (rtp_header->payload) {
+            case 0:
+            case 1:
+            case 2:
+            case 3:
+            case 4:
+            case 5:
+            case 6:
+            case 7:
+            case 8:
+            case 9:
+            case 10:
+            case 11:
+            case 12:
+            case 13:
+            case 14:
+            case 15:
+            case 16:
+            case 17:
+            case 18:
+                sprintf(payload_str, "Audio");
+                break;
+            case 31:
+                sprintf(payload_str, "H.261");
+                break;
+            case 32:
+                sprintf(payload_str, "MPV");
+                break;
+            case 33:
+                sprintf(payload_str, "MP2T");
+                break;
+            case 34:
+                sprintf(payload_str, "H.263");
+                break;
+            case 96:
+                sprintf(payload_str, "H.264");
+                break;
+            case 97:
+                sprintf(payload_str, "AAC");
+                break;
+            default:
+                sprintf(payload_str, "other: %d", rtp_header->payload);
+                break;
+            }
+            uint32_t timestamp = ntohl(rtp_header->timestamp);
+            uint32_t seq       = ntohs(rtp_header->seq_no);
+
+            printf(" %5d | %7s | %11u | %6d | %8d | %10u\n", cnt, payload_str,
+                   timestamp, seq, pkt_size, rtp_header->ssrc);
+            cnt++;
+        }
+    }
+
+    close(fd);
     return 0;
 }
 
-int main(int argc, char *argv[])
+int
+main(int argc, char *argv[])
 {
     if (argc < 1) {
-        printf("Usage: %s <rtp file>\n", argv[0]);
+        printf("Usage: %s <port>\n", argv[0]);
         return -1;
     }
 
     int i;
-    for (i = 1; i< argc; i++) {
-        rtp_parser(argv[i]);
+    for (i = 1; i < argc; i++) {
+        rtp_parser(atoi(argv[1]));
     }
     return 0;
 }
