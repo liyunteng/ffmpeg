@@ -15,7 +15,7 @@ dump_codecpar(const char *prefix, AVCodecParameters *codecpar)
         "%s  "
         "codec_type: 0x%x  codec_id: 0x%x codec_tag: %u\n"
         "extradata: %p  extradata_size: %d format: %d\n"
-        "bitrate: %lld  bits_per_coded_sample: %d\n"
+        "bitrate: %ld  bits_per_coded_sample: %d\n"
         "bits_per_raw_sample: %d\n"
         "profile: %d level: %d\n"
         "width: %d height: %d\n"
@@ -26,7 +26,7 @@ dump_codecpar(const char *prefix, AVCodecParameters *codecpar)
         "color_trc: 0x%x\n"
         "color_space: 0x%x\n"
         "chroma_location: 0x%x\n"
-        "video_delay: %d channel_layout: %llu\n"
+        "video_delay: %d channel_layout: %ld\n"
         "channels: %d  sample_rate: %d\n"
         "block_align: %d frame_size: %d\n"
         "initial_padding: %d trailing_padding: %d\n"
@@ -56,11 +56,11 @@ transformat(const char *in, const char *out)
 
     //av_log_set_level(AV_LOG_DEBUG);
 
-    if (avformat_open_input(&ifmt_ctx, in, 0, 0) < 0) {
+    if (avformat_open_input(&ifmt_ctx, in, NULL, NULL) < 0) {
         av_log(NULL, AV_LOG_ERROR, "avformat_open_input %s failed\n", in);
         goto failed;
     }
-    if (avformat_find_stream_info(ifmt_ctx, 0) < 0) {
+    if (avformat_find_stream_info(ifmt_ctx, NULL) < 0) {
         av_log(ifmt_ctx, AV_LOG_ERROR, "avformat_find_stream_info failed\n");
         goto failed;
     }
@@ -115,8 +115,7 @@ transformat(const char *in, const char *out)
             if (out_stream->codecpar->extradata) {
                 av_free(out_stream->codecpar->extradata);
             }
-            out_stream->codecpar->extradata =
-                av_mallocz(extradata_size + AV_INPUT_BUFFER_PADDING_SIZE);
+            out_stream->codecpar->extradata = av_mallocz(extradata_size);
             if (out_stream->codecpar->extradata == NULL) {
                 av_log(NULL, AV_LOG_ERROR, "av_mallocz failed\n");
                 goto failed;
