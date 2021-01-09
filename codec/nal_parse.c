@@ -13,47 +13,71 @@
 #include <string.h>
 
 typedef enum {
-    NAL_TRAIL_N = 0,
-    NAL_TRAIL_R = 1,
-    NAL_TSA_N = 2,
-    NAL_TSA_R = 3,
-    NAL_STSA_N = 4,
-    NAL_STSA_R = 5,
-    NAL_RADL_N = 6,
-    NAL_RADL_R = 7,
-    NAL_RASL_N = 8,
-    NAL_RASL_R = 9,
-    NAL_BLA_W_LP = 16,
-    NAL_BLA_W_RADL = 17,
-    NAL_BLA_N_LP = 18,
-    NAL_IDR_W_RADL = 19,
-    NAL_IDR_N_LP = 20,
-    NAL_CRA_NUT = 21,
-    NAL_VPS = 32,
-    NAL_SPS = 33,
-    NAL_PPS = 34,
-    NAL_AUD = 35,
-    NAL_EOS_NUT = 36,
-    NAL_EOB_NUT = 37,
-    NAL_FD_NUT = 38,
-    NAL_SEI_PREFIX = 39,
-    NAL_SEI_SUFFIX = 40
-} Nalu265Type;
+    HEVC_NAL_TRAIL_N    = 0,
+    HEVC_NAL_TRAIL_R    = 1,
+    HEVC_NAL_TSA_N      = 2,
+    HEVC_NAL_TSA_R      = 3,
+    HEVC_NAL_STSA_N     = 4,
+    HEVC_NAL_STSA_R     = 5,
+    HEVC_NAL_RADL_N     = 6,
+    HEVC_NAL_RADL_R     = 7,
+    HEVC_NAL_RASL_N     = 8,
+    HEVC_NAL_RASL_R     = 9,
+    HEVC_NAL_VCL_N10    = 10,
+    HEVC_NAL_VCL_R11    = 11,
+    HEVC_NAL_VCL_N12    = 12,
+    HEVC_NAL_VCL_R13    = 13,
+    HEVC_NAL_VCL_N14    = 14,
+    HEVC_NAL_VCL_R15    = 15,
+    HEVC_NAL_BLA_W_LP   = 16,
+    HEVC_NAL_BLA_W_RADL = 17,
+    HEVC_NAL_BLA_N_LP   = 18,
+    HEVC_NAL_IDR_W_RADL = 19,
+    HEVC_NAL_IDR_N_LP   = 20,
+    HEVC_NAL_CRA_NUT    = 21,
+    HEVC_NAL_IRAP_VCL22 = 22,
+    HEVC_NAL_IRAP_VCL23 = 23,
+    HEVC_NAL_RSV_VCL24  = 24,
+    HEVC_NAL_RSV_VCL25  = 25,
+    HEVC_NAL_RSV_VCL26  = 26,
+    HEVC_NAL_RSV_VCL27  = 27,
+    HEVC_NAL_RSV_VCL28  = 28,
+    HEVC_NAL_RSV_VCL29  = 29,
+    HEVC_NAL_RSV_VCL30  = 30,
+    HEVC_NAL_RSV_VCL31  = 31,
+    HEVC_NAL_VPS        = 32,
+    HEVC_NAL_SPS        = 33,
+    HEVC_NAL_PPS        = 34,
+    HEVC_NAL_AUD        = 35,
+    HEVC_NAL_EOS_NUT   = 36,
+    HEVC_NAL_EOB_NUT    = 37,
+    HEVC_NAL_FD_NUT     = 38,
+    HEVC_NAL_SEI_PREFIX = 39,
+    HEVC_NAL_SEI_SUFFIX = 40
+} HEVCNALUnitType;
+
+enum HEVCSliceType {
+    HEVC_SLICE_B = 0,
+    HEVC_SLICE_P = 1,
+    HEVC_SLICE_I = 2,
+};
 
 typedef enum {
-    NALU_TYPE_SLICE     = 1,
-    NALU_TYPE_DPA       = 2,
-    NALU_TYPE_DPB       = 3,
-    NALU_TYPE_DPC       = 4,
-    NALU_TYPE_IDR       = 5,
-    NALU_TYPE_SEI       = 6,
-    NALU_TYPE_SPS       = 7,
-    NALU_TYPE_PPS       = 8,
-    NALU_TYPE_AUD       = 9,
-    NALU_TYPE_EOSEQ     = 10,
-    NALU_TYPE_EOSTREAM  = 11,
-    NALU_TYPE_FILL      = 12,
-} Nalu264Type;
+    H264_NAL_SLICE           = 1,
+    H264_NAL_DPA             = 2,
+    H264_NAL_DPB             = 3,
+    H264_NAL_DPC             = 4,
+    H264_NAL_IDR_SLICE       = 5,
+    H264_NAL_SEI             = 6,
+    H264_NAL_SPS             = 7,
+    H264_NAL_PPS             = 8,
+    H264_NAL_AUD             = 9,
+    H264_NAL_END_SEQUENCE    = 10,
+    H264_NAL_END_STREAM      = 11,
+    H264_NAL_FILLER_DATA     = 12,
+    H264_NAL_SPS_EXT         = 13,
+    H264_NAL_AUXILIARY_SLICE = 19,
+} H264NALUnitType;
 
 typedef enum {
     NALU_PRIORITY_DISPOSABLE = 0,
@@ -220,31 +244,31 @@ nalu_parser(char *url)
         char type_str[20] = {0};
         if (isH265) {
             switch (n->nal_unit_type) {
-            case NAL_TRAIL_N: sprintf(type_str, "TRAIL_N"); break;
-            case NAL_TRAIL_R: sprintf(type_str, "TRAIL_R"); break;
-            case NAL_TSA_N: sprintf(type_str, "TSA_N"); break;
-            case NAL_TSA_R: sprintf(type_str, "TSA_R"); break;
-            case NAL_STSA_N: sprintf(type_str, "STSA_N"); break;
-            case NAL_STSA_R: sprintf(type_str, "STSA_R"); break;
-            case NAL_RADL_N: sprintf(type_str, "RADL_N"); break;
-            case NAL_RADL_R: sprintf(type_str, "RADL_R"); break;
-            case NAL_RASL_N: sprintf(type_str, "RASL_N"); break;
-            case NAL_RASL_R: sprintf(type_str, "RASL_R"); break;
-            case NAL_BLA_W_LP: sprintf(type_str, "BLA_W_LP"); break;
-            case NAL_BLA_W_RADL: sprintf(type_str, "BLA_W_RADL"); break;
-            case NAL_BLA_N_LP: sprintf(type_str, "BLA_N_LP"); break;
-            case NAL_IDR_W_RADL: sprintf(type_str, "IDR_W_RADL"); break;
-            case NAL_IDR_N_LP: sprintf(type_str, "IDR_N_LP"); break;
-            case NAL_CRA_NUT: sprintf(type_str, "CRA_NUT"); break;
-            case NAL_VPS: sprintf(type_str, "VPS"); break;
-            case NAL_SPS: sprintf(type_str, "SPS"); break;
-            case NAL_PPS: sprintf(type_str, "PPS"); break;
-            case NAL_AUD: sprintf(type_str, "AUD"); break;
-            case NAL_EOS_NUT: sprintf(type_str, "EOS_NUT"); break;
-            case NAL_EOB_NUT: sprintf(type_str, "EOB_NUT"); break;
-            case NAL_FD_NUT: sprintf(type_str, "FD_NUT"); break;
-            case NAL_SEI_PREFIX: sprintf(type_str, "SEI_PREFIX"); break;
-            case NAL_SEI_SUFFIX: sprintf(type_str, "SEI_SUFFIX"); break;
+            case HEVC_NAL_TRAIL_N: sprintf(type_str, "TRAIL_N"); break;
+            case HEVC_NAL_TRAIL_R: sprintf(type_str, "TRAIL_R"); break;
+            case HEVC_NAL_TSA_N: sprintf(type_str, "TSA_N"); break;
+            case HEVC_NAL_TSA_R: sprintf(type_str, "TSA_R"); break;
+            case HEVC_NAL_STSA_N: sprintf(type_str, "STSA_N"); break;
+            case HEVC_NAL_STSA_R: sprintf(type_str, "STSA_R"); break;
+            case HEVC_NAL_RADL_N: sprintf(type_str, "RADL_N"); break;
+            case HEVC_NAL_RADL_R: sprintf(type_str, "RADL_R"); break;
+            case HEVC_NAL_RASL_N: sprintf(type_str, "RASL_N"); break;
+            case HEVC_NAL_RASL_R: sprintf(type_str, "RASL_R"); break;
+            case HEVC_NAL_BLA_W_LP: sprintf(type_str, "BLA_W_LP"); break;
+            case HEVC_NAL_BLA_W_RADL: sprintf(type_str, "BLA_W_RADL"); break;
+            case HEVC_NAL_BLA_N_LP: sprintf(type_str, "BLA_N_LP"); break;
+            case HEVC_NAL_IDR_W_RADL: sprintf(type_str, "IDR_W_RADL"); break;
+            case HEVC_NAL_IDR_N_LP: sprintf(type_str, "IDR_N_LP"); break;
+            case HEVC_NAL_CRA_NUT: sprintf(type_str, "CRA_NUT"); break;
+            case HEVC_NAL_VPS: sprintf(type_str, "VPS"); break;
+            case HEVC_NAL_SPS: sprintf(type_str, "SPS"); break;
+            case HEVC_NAL_PPS: sprintf(type_str, "PPS"); break;
+            case HEVC_NAL_AUD: sprintf(type_str, "AUD"); break;
+            case HEVC_NAL_EOS_NUT: sprintf(type_str, "EOS_NUT"); break;
+            case HEVC_NAL_EOB_NUT: sprintf(type_str, "EOB_NUT"); break;
+            case HEVC_NAL_FD_NUT: sprintf(type_str, "FD_NUT"); break;
+            case HEVC_NAL_SEI_PREFIX: sprintf(type_str, "SEI_PREFIX"); break;
+            case HEVC_NAL_SEI_SUFFIX: sprintf(type_str, "SEI_SUFFIX"); break;
             default:
                 sprintf(type_str, "%d", n->nal_unit_type);
                 break;
@@ -252,18 +276,18 @@ nalu_parser(char *url)
 
         } else {
             switch (n->nal_unit_type) {
-            case NALU_TYPE_SLICE:sprintf(type_str, "SLICE"); break;
-            case NALU_TYPE_DPA:sprintf(type_str, "DPA"); break;
-            case NALU_TYPE_DPB:sprintf(type_str, "DPB"); break;
-            case NALU_TYPE_DPC:sprintf(type_str, "DPC"); break;
-            case NALU_TYPE_IDR:sprintf(type_str, "IDR"); break;
-            case NALU_TYPE_SEI:sprintf(type_str, "SEI"); break;
-            case NALU_TYPE_SPS:sprintf(type_str, "SPS"); break;
-            case NALU_TYPE_PPS:sprintf(type_str, "PPS"); break;
-            case NALU_TYPE_AUD:sprintf(type_str, "AUD"); break;
-            case NALU_TYPE_EOSEQ:sprintf(type_str, "EOSEQ"); break;
-            case NALU_TYPE_EOSTREAM:sprintf(type_str, "EOSTREAM"); break;
-            case NALU_TYPE_FILL:sprintf(type_str, "FILL"); break;
+            case H264_NAL_SLICE:sprintf(type_str, "SLICE"); break;
+            case H264_NAL_DPA:sprintf(type_str, "DPA"); break;
+            case H264_NAL_DPB:sprintf(type_str, "DPB"); break;
+            case H264_NAL_DPC:sprintf(type_str, "DPC"); break;
+            case H264_NAL_IDR_SLICE:sprintf(type_str, "IDR"); break;
+            case H264_NAL_SEI:sprintf(type_str, "SEI"); break;
+            case H264_NAL_SPS:sprintf(type_str, "SPS"); break;
+            case H264_NAL_PPS:sprintf(type_str, "PPS"); break;
+            case H264_NAL_AUD:sprintf(type_str, "AUD"); break;
+            case H264_NAL_END_SEQUENCE:sprintf(type_str, "EOSEQ"); break;
+            case H264_NAL_END_STREAM:sprintf(type_str, "EOSTREAM"); break;
+            case H264_NAL_FILLER_DATA:sprintf(type_str, "FILL"); break;
             default:
                 sprintf(type_str, "%d", n->nal_unit_type);
                 break;
