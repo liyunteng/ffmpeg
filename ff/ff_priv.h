@@ -2,7 +2,7 @@
  * Description: priv
  *
  * Copyright (C) 2017 StreamOcean
- * Last-Updated: <2017/09/18 01:20:12 liyunteng>
+ * Last-Updated: <2021/01/26 23:21:33>
  */
 #ifndef FF_PRIV_H
 #define FF_PRIV_H
@@ -10,7 +10,7 @@
 #include <libavcodec/avcodec.h>
 #include <libswresample/swresample.h>
 #include <libavfilter/avfilter.h>
-#include <libavfilter/avfiltergraph.h>
+/* #include <libavfilter/avfiltergraph.h> */
 #include <libavfilter/buffersrc.h>
 #include <libavfilter/buffersink.h>
 #include <libavutil/pixfmt.h>

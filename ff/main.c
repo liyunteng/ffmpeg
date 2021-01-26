@@ -3,7 +3,7 @@
  * Description: main
  *
  * Copyright (C) 2017 StreamOcean
- * Last-Updated: <2017/09/18 03:12:48 liyunteng>
+ * Last-Updated: <2021/01/26 23:23:55>
  */
 
 #include <unistd.h>
@@ -17,8 +17,10 @@ int main(void)
     avfilter_register_all();
 
     struct stream_out *out = create_stream_out("udp://127.0.0.1:12345");
-    struct stream_in *in1 = create_stream_in("http://172.16.1.238/live/hngqad1000", out,  true, true);
-    struct stream_in *in2 = create_stream_in("http://172.16.1.238/live/hngq1000", out, true, true);
+    struct stream_in *in1 = create_stream_in("udp://127.0.0.1:12346", out,  true, true);
+    struct stream_in *in2 = create_stream_in("udp://127.0.0.1:12347", out, true, true);
+    /* struct stream_in *in1 = create_stream_in("http://172.16.1.238/live/hngqad1000", out,  true, true); */
+    /* struct stream_in *in2 = create_stream_in("http://172.16.1.238/live/hngq1000", out, true, true); */
     /* struct stream_in *music = create_stream_in("./qrsy.mp2", out, false, true); */
     /* start(music); */
     struct timeval tv;

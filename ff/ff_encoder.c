@@ -2,7 +2,7 @@
  * Description: ff encoder
  *
  * Copyright (C) 2017 StreamOcean
- * Last-Updated: <2017/09/18 03:02:06 liyunteng>
+ * Last-Updated: <2021/01/26 23:21:57>
  */
 
 #include "ff_encoder.h"
@@ -173,7 +173,7 @@ init_output(struct ff_ctx *ff)
 #endif
 
     if (ff->fctx->oformat->flags & AVFMT_GLOBALHEADER) {
-        ff->ctx[0]->flags |= CODEC_FLAG_GLOBAL_HEADER;
+        ff->ctx[0]->flags |= AV_CODEC_FLAG_GLOBAL_HEADER;
     }
     if (! (ff->fctx->oformat->flags & AVFMT_NOFILE)) {
         if (avio_open(&ff->fctx->pb, ff->url, AVIO_FLAG_WRITE) < 0) {
